@@ -1,111 +1,108 @@
+// const fs=require('fs')
 
+    //read file
+//     fs,readfile('kle.txt',Utf8,(err,data)=>{
+//         if(err)
+//         {
+//             console.error('error rading file',err)
+//             return
+//         }
+//         console.log('file contains',data);
+//     })
 
+//     //write
+//     fs.writefile('file.txt','hello world!',(err)=>{
+//         if(err){
+//             console.error('error writing to file:',err);
+//             return;
+//         }
+//         console.log('file written successfully!');
+//     });
+    
+//     //update--->append
+//     fs.appendfile('kle.txt','\nAppended text!',(err)=>{
+//         if(err){
+//             console.error('error appending in file',err);
+//             return
+//         }
+//         console.log('data appended successfully');
+//     })
+//     //delete--->unlink
+//     fs.unlink('kl.txt',(err)=>{
+//         if(err){
+//             console.error('error unlinked in file',err);
+//             return
+//         }
+//         console.log('')
+
+//     })
+
+// )
+// const path=require('path')
+// const file=path.resolve('anuradha','kle.txt')
+// console.log(file);
+
+// let http=require('http') //import http
+// http.createServer(function(req,res)
+// {
+//     if(req.url=='/home')
+//     {
+//         res.write('home')
+//     }
+//     else if(req.url=='/about')
+//     {
+//         res.write('about')
+//     }
+//     else
+//     {
+//         res.write('undefined')
+//     }
+// res.end()
+// })
+// .listen(8000,()=>console.log('server is running in the port 8000'))
+
+//import express module
+const e = require('express');
 const express = require('express');
-const mongodb = require('mongodb');
-
 const app = express();
-const MongoClient = mongodb.MongoClient;
-
-const dbUrl = 'mongodb+srv://demoproject1:demoproject1@cluster0.pj2dg.mongodb.net/'
-const dbName = 'kle1';
 
 app.use(express.json());
 
-let client;
+//simple user data
+let users =
+ [ ]
+       
+//GET all users
+app.get('/users',(req,res)=>{
+    res.json(users); //fixed from res.join(users) to res.json(users
+});
+//POST - Add a new user
+app.post('/users',(req, res) => {
+    const newUser = { id: users.length + 1, ...req.body,
+        name:"name", ...req.body,
+       
+    };
+    users.push(newuser);
+    res.status(201).json(newuser);
+   
+});
+//PUT - update a user
+app.put('/users/:id',(req,res)=>{
+    const user = users.find(u=> u.id === parseInt(req.params.id));
+    if (!user) return res.status(404).json({message:"user not found" });
+    user.name = req.body.name|| user.name;
+    user.email = req.body.email|| user.email;c
 
-// Initialize MongoDB Connection Once
-async function connectDB() {
-    if (!client) {
-        try {
-            client = await MongoClient.connect(dbUrl);
-            console.log('Connected to MongoDB');
-        } 
-        catch (error) {
-            console.error('Error connecting to MongoDB:', error);
-            throw error
-        }
-    }
-    return client.db(dbName);
-}
-
-
-// Get All Users
-app.get('/', async (req, res) => {
-    try {
-        const db = await connectDB();
-        const users = await db.collection('userDetails').find().toArray();
-        res.json({ message: 'Displaying all records', users });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+    res.json(user);
 });
 
-// Insert New Record
-app.post('/', async (req, res) => {
-    try {
-        const db = await connectDB();
-        const result = await db.collection('userDetails').insertOne(req.body);
-        res.json({ message: 'Record Inserted', insertedId: result.insertedId });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+//DELETE -Remove a user
+app.delete('/user/:id',(req,res)=>{
+    users = users.filter(user => user.id !== parseInt(req.params.id));
+    res.json({message:'user deleted'});
 });
 
-// Fetch User by ID
-app.get('/fetch/:id', async (req, res) => {
-    try {
-        const db = await connectDB();
-        const id = parseInt(req.params.id);
-        const user = await db.collection('userDetails').findOne({ id });
 
-        if (user) {
-            res.json({ message: 'Record Found', user });
-        } else {
-            res.status(404).json({ message: 'Record Not Found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
+   // start the Server
+   app.listen(8000, () => console.log("server is running on port 8000"))
 
-// Update User by Name
-app.put('/update/:name', async (req, res) => {
-    try {
-        const db = await connectDB();
-        const name = req.params.name;
-        const updatedData = { $set: req.body };
-        const result = await db.collection('userDetails').updateOne({ name }, updatedData);
-
-        if (result.modifiedCount > 0) {
-            res.json({ message: 'Record Updated' });
-        } else {
-            res.status(404).json({ message: 'Record Not Found or No Change Made' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
-
-// Delete User by Name
-app.delete('/delete/:name', async (req, res) => {
-    try {
-        const db = await connectDB();
-        const name = req.params.name;
-        const result = await db.collection('userDetails').deleteOne({ name });
-
-        if (result.deletedCount > 0) {
-            res.json({ message: 'Record Deleted' });
-        } else {
-            res.status(404).json({ message: 'Record Not Found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
-
-app.listen(8000, () => console.log('Server is running on port 8000'));
