@@ -1,108 +1,78 @@
-// const fs=require('fs')
-
-    //read file
-//     fs,readfile('kle.txt',Utf8,(err,data)=>{
-//         if(err)
-//         {
-//             console.error('error rading file',err)
-//             return
-//         }
-//         console.log('file contains',data);
-//     })
-
-//     //write
-//     fs.writefile('file.txt','hello world!',(err)=>{
-//         if(err){
-//             console.error('error writing to file:',err);
-//             return;
-//         }
-//         console.log('file written successfully!');
-//     });
-    
-//     //update--->append
-//     fs.appendfile('kle.txt','\nAppended text!',(err)=>{
-//         if(err){
-//             console.error('error appending in file',err);
-//             return
-//         }
-//         console.log('data appended successfully');
-//     })
-//     //delete--->unlink
-//     fs.unlink('kl.txt',(err)=>{
-//         if(err){
-//             console.error('error unlinked in file',err);
-//             return
-//         }
-//         console.log('')
-
-//     })
-
-// )
-// const path=require('path')
-// const file=path.resolve('anuradha','kle.txt')
-// console.log(file);
-
-// let http=require('http') //import http
-// http.createServer(function(req,res)
-// {
-//     if(req.url=='/home')
-//     {
-//         res.write('home')
-//     }
-//     else if(req.url=='/about')
-//     {
-//         res.write('about')
-//     }
-//     else
-//     {
-//         res.write('undefined')
-//     }
-// res.end()
-// })
-// .listen(8000,()=>console.log('server is running in the port 8000'))
-
-//import express module
-const e = require('express');
-const express = require('express');
-const app = express();
-
+var express = require('express');
+var app = express();
+var mongoose = require('mongoose');
+var firstSchema = require('./schema');
 app.use(express.json());
 
-//simple user data
-let users =
- [ ]
-       
-//GET all users
-app.get('/users',(req,res)=>{
-    res.json(users); //fixed from res.join(users) to res.json(users
-});
-//POST - Add a new user
-app.post('/users',(req, res) => {
-    const newUser = { id: users.length + 1, ...req.body,
-        name:"name", ...req.body,
-       
-    };
-    users.push(newuser);
-    res.status(201).json(newuser);
-   
-});
-//PUT - update a user
-app.put('/users/:id',(req,res)=>{
-    const user = users.find(u=> u.id === parseInt(req.params.id));
-    if (!user) return res.status(404).json({message:"user not found" });
-    user.name = req.body.name|| user.name;
-    user.email = req.body.email|| user.email;c
+// MongoDB URL without specifying a database name
+let dburl ='mongodb+srv://Anuradhagurav:Anuradha02@cluster0.3k2q6.mongodb.net/'
 
-    res.json(user);
+//establish connection
+mongoose.connect(dburl)
+  .then(() => console.log('db connected'))
+  .catch((err) => console.log('DB connection error:', err));
+
+// GET route to fetch all users
+app.get('/', async function (req, res) {
+  try {
+    const list = await firstSchema.find();
+    res.send(list);
+  } catch (err) {
+    console.log('Error fetching data:', err);
+    res.status(500).send('Error fetching data');
+  }
 });
 
-//DELETE -Remove a user
-app.delete('/user/:id',(req,res)=>{
-    users = users.filter(user => user.id !== parseInt(req.params.id));
-    res.json({message:'user deleted'});
+// POST route to create a new user
+app.post('/sign-up', async function (req, res) {
+  try {
+    const newUser = new firstSchema(req.body);
+    await newUser.save();
+    res.json({
+      message: 'Data inserted successfully'
+    });
+  } catch (err) {
+    console.log('Error saving data:', err);
+    res.status(500).send('Error saving data');
+  }
 });
 
+// PUT route to update a user's information by email
+app.put('/update/:id', async function (req, res) {
+  try {
+    const updatedUser = await firstSchema.findByIdAndUpdate(
+      req.params.id,  // The user ID from the URL
+      req.body,       // The data to update
+      { new: true }   // Return the updated document
+    );
+    if (!updatedUser) {
+      return res.status(404).send('User not found');
+    }
+    res.json({
+      message: 'User updated successfully',
+      updatedUser: updatedUser
+    });
+  } catch (err) {
+    console.log('Error updating data:', err);
+    res.status(500).send('Error updating data');
+  }
+});
 
-   // start the Server
-   app.listen(8000, () => console.log("server is running on port 8000"))
+// DELETE route to delete a user by email
+app.delete('/delete/:id', async function (req, res) {
+  try {
+    const deletedUser = await firstSchema.findByIdAndDelete(req.params.id);
+    if (!deletedUser) {
+      return res.status(404).send('User not found');
+    }
+    res.json({
+      message: 'User deleted successfully',
+      deletedUser: deletedUser
+    });
+  } catch (err) {
+    console.log('Error deleting data:', err);
+    res.status(500).send('Error deleting data');
+  }
+});
 
+app.listen(3000, () => console.log('Server is running on port 3000'));
